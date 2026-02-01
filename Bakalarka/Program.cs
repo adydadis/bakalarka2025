@@ -84,7 +84,7 @@ bool DFS(string nodeId)
 
 if (chosen == "1")
 {
-    Console.WriteLine("\n--- UKÁZKOVÝ GRAF Z PAPÍRU Č. 2 ---");
+    Console.WriteLine("\nUkázka:");
 
     string ukazka = "x1 START 1\nx2 START 0\nG1 AND x1 x2\nG2 NEG G1";
     obvod = par.GetInput(ukazka);
@@ -96,7 +96,7 @@ if (chosen == "1")
 else
 {
     Console.WriteLine("\nZadávej pravidla (např. 'G1 AND A B' nebo 'S -> A B | c').");
-    Console.WriteLine("Pro konec a vyhodnocení napiš 'konec'.");
+    Console.WriteLine("Pro konec napiš 'konec'.");
 
     string celyVstup = "";
     while (true)
@@ -107,18 +107,16 @@ else
         celyVstup += radek + "\n";
     }
 
-    // Parser zpracuje celý blok textu najednou
     obvod = par.GetInput(celyVstup);
 
-    Console.Write("\nKteré ID chceš vyhodnotit? ");
+    Console.Write("\nKteré ID vyhodnotit? ");
     string final = (Console.ReadLine() ?? "").Trim();
     
-    // Hledáme vždy originální větev
-    string hledaneId = final + "_orig";
+    string findId = final + "_orig";
 
-    if (obvod.ContainsKey(hledaneId))
+    if (obvod.ContainsKey(findId))
     {
-        bool res = DFS(hledaneId);
+        bool res = DFS(findId);
         Console.WriteLine($"\n VÝSLEDEK pro {final}: {(res ? "1" : "0")}!");
     }
     else

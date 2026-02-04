@@ -3,7 +3,7 @@
 using Bakalarka;
 
 Parser par = new Parser();
-Dictionary<string, Node> obvod = new Dictionary<string, Node>(); // najit 'obvod' anglicky
+Dictionary<string, Node> circuit = new Dictionary<string, Node>(); // najit 'obvod' anglicky
 
 Console.WriteLine("Vyber akci:");
 Console.WriteLine("1. Ukazkovy priklad");
@@ -11,10 +11,66 @@ Console.WriteLine("2. Zadat vlastni");
 
 string chosen = Console.ReadLine() ?? "1"; 
 
+void printTee(string nodeId, string prefix = "", bool isLast = true)
+{
+    if (!circuit.ContainsKey(nodeId)) 
+    {
+        return;
+    }
+
+    var node = circuit[nodeId];
+
+    string vetve;
+    if (isLast) 
+    {
+        vetve = " '--- "; //Posledni
+    }
+    else 
+    {
+        vetve = " |--- "; 
+    }
+    
+    string statusText;
+    if (node.Status == NodeState.True) 
+    {
+        statusText = "1";
+    }
+    else if (node.Status == NodeState.False) 
+    {
+        statusText = "0";
+    }
+    else 
+    {
+        statusText = "?"; // not visited
+    }
+    
+    Console.Write(prefix + vetve);
+    Console.WriteLine($"{nodeId} {statusText} ({node.Type})");
+    
+    
+    for (int i = 0; i < node.Inputs.Count; i++)
+    {
+        // odsazeni
+        string newPrefix;
+        if (isLast) 
+        {
+            newPrefix = prefix + "      "; 
+        }
+        else 
+        {
+            newPrefix = prefix + "|   "; 
+        }
+
+        bool isLastInput = (i == node.Inputs.Count - 1);
+        
+        printTee(node.Inputs[i], newPrefix, isLastInput);
+    }
+}
+
 
 bool DFS(string nodeId)
 {
-    var node = obvod[nodeId];
+    var node = circuit[nodeId];
 
     if (node.Status == NodeState.False)
     {
@@ -84,40 +140,58 @@ bool DFS(string nodeId)
 
 if (chosen == "1")
 {
-    Console.WriteLine("\nUkázka:");
+    Console.WriteLine("\nUkazka:");
 
     string ukazka = "x1 START 1\nx2 START 0\nG1 AND x1 x2\nG2 NEG G1";
-    obvod = par.GetInput(ukazka);
+    circuit = par.GetInput(ukazka);
 
     bool res = DFS("G2_orig");
-    Console.WriteLine($"Výsledek G2 (-(1 AND 0)): {(res ? "1" : "0")}");
-    
+    printTee("G2_orig"); 
+    string vysledekText;
+    if (res == true)
+    {
+        vysledekText = "1";
+    }
+    else
+    {
+        vysledekText = "0";
+    }
+    Console.WriteLine($"\n Vysledek pro G2: {vysledekText}!");
 }
 else
 {
-    Console.WriteLine("\nZadávej pravidla (např. 'G1 AND A B' nebo 'S -> A B | c').");
+    Console.WriteLine("\nZadej pravidla ('G1 AND A B').");
     Console.WriteLine("Pro konec napiš 'konec'.");
 
     string celyVstup = "";
     while (true)
     {
-        Console.Write("> ");
         string radek = Console.ReadLine() ?? "";
         if (radek.ToLower().Trim() == "konec") break;
         celyVstup += radek + "\n";
     }
 
-    obvod = par.GetInput(celyVstup);
+    circuit = par.GetInput(celyVstup);
 
-    Console.Write("\nKteré ID vyhodnotit? ");
+    Console.Write("\nKtere ID vyhodnotit? ");
     string final = (Console.ReadLine() ?? "").Trim();
     
     string findId = final + "_orig";
 
-    if (obvod.ContainsKey(findId))
+    if (circuit.ContainsKey(findId))
     {
         bool res = DFS(findId);
-        Console.WriteLine($"\n VÝSLEDEK pro {final}: {(res ? "1" : "0")}!");
+        printTee(findId); 
+        string vysledekText;
+        if (res == true)
+        {
+            vysledekText = "1";
+        }
+        else
+        {
+            vysledekText = "0";
+        }
+        Console.WriteLine($"\n Vysledek pro {final}: {vysledekText}!");
     }
     else
     {

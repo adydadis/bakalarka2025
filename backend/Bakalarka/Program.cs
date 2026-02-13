@@ -8,17 +8,30 @@ Dictionary<string, Node> circuit = new Dictionary<string, Node>(); // najit 'obv
 Console.WriteLine("Vyber akci:");
 Console.WriteLine("1. Ukazkovy priklad");
 Console.WriteLine("2. Zadat vlastni");
+bool cyklus = false;
+
 
 string chosen = Console.ReadLine() ?? "1"; 
 
-void printTee(string nodeId, string prefix = "", bool isLast = true)
+void printTee(string nodeId, string prefix = "", bool isLast = true, List<string> ancestors = null)
 {
     if (!circuit.ContainsKey(nodeId)) 
     {
         return;
     }
 
+    if (ancestors == null)
+    {
+        ancestors = new List<string>();
+    }
     var node = circuit[nodeId];
+    
+    if (ancestors.Contains(nodeId))
+    {
+        string branch = isLast ? " '--- " : " |--- ";
+        Console.WriteLine($"{prefix}{branch}{nodeId} <--- [CYKLUS]");
+        return; 
+    }
 
     string vetve;
     if (isLast) 
@@ -47,6 +60,9 @@ void printTee(string nodeId, string prefix = "", bool isLast = true)
     Console.Write(prefix + vetve);
     Console.WriteLine($"{nodeId} {statusText} ({node.Type})");
     
+    var newAncestors = new List<string>(ancestors);
+    newAncestors.Add(nodeId);
+    
     
     for (int i = 0; i < node.Inputs.Count; i++)
     {
@@ -63,7 +79,7 @@ void printTee(string nodeId, string prefix = "", bool isLast = true)
 
         bool isLastInput = (i == node.Inputs.Count - 1);
         
-        printTee(node.Inputs[i], newPrefix, isLastInput);
+        printTee(node.Inputs[i], newPrefix, isLastInput, newAncestors);
     }
 }
 
@@ -80,7 +96,14 @@ bool DFS(string nodeId)
     {
         return true;
     }
+    
+    if (node.Status == NodeState.Visiting)
+    {
+        cyklus = true; // Našli jsme uzel, který už je "v procesu"
+        return false; // Zastavíme tuhle větev, abychom nespadli do nekonečna
+    }
 
+    node.Status = NodeState.Visiting;
     bool result = false;
 
     if (node.Type == "AND")

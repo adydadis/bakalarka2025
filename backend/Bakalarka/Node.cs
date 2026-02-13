@@ -1,6 +1,6 @@
 ﻿namespace Bakalarka;
 
-public enum NodeState {NotVisited, True, False}
+public enum NodeState {NotVisited, True, False, Visiting}
 
 public class Node
 {

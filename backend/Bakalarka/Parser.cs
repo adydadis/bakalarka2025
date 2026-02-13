@@ -156,6 +156,20 @@ public class Parser
 
     private void CheckAndAddTerminal(string symbol, Dictionary<string, Node> obvod)
     {
+        if (symbol == "e")
+        {
+            string idOrig = "e_orig";
+            string idNeg = "e_neg";
+            
+            if (!obvod.ContainsKey(idOrig))
+            {
+                obvod.Add(idOrig, new Node(idOrig, "START", new List<string>(), NodeState.True));
+                obvod.Add(idNeg, new Node(idNeg, "START", new List<string>(), NodeState.False));
+            }
+            return;
+
+        }
+        
         if (char.IsLower(symbol[0]))
         {
             string idOrig = symbol + "_orig";

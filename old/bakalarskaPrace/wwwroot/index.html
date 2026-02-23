@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <link href="_content/Z.Blazor.Diagrams/default.styles.css" rel="stylesheet" />
+    <style>
+        .hradlo-card {
+            width: 120px;
+            background-color: white;
+            border: 1px solid black;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            user-select: none; /* Zabrání označování textu */
+            touch-action: none; /* Klíč pro dragging v Blazoru */
+        }
+
+        .hradlo-card.selected {
+            outline: 2px solid #007bff;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        }
+
+        .hradlo-header {
+            font-weight: bold;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 5px;
+            pointer-events: none; /* Myš "propadne" na kartu, což spustí dragging */
+        }
+    </style>
+</head>
+<body>
+<div id="app">Načítám...</div>
+<script src="_content/Z.Blazor.Diagrams/script.js"></script>
+<script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

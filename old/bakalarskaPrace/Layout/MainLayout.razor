@@ -1,0 +1,25 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    <main>
+        @* Tady jsme smazali <NavMenu /> a všechny ty boční divy *@
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<style>
+    /* Zrušíme odsazení pro menu, aby diagram byl od kraje ke kraji */
+    .page {
+        flex-direction: column;
+    }
+    main {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden; /* Aby nám stránka neujížděla */
+    }
+    .content {
+        padding: 0 !important; /* Diagram musí být až k okrajům */
+    }
+</style>

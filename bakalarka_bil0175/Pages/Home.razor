@@ -1,0 +1,100 @@
+﻿@page "/"
+@using Blazor.Diagrams
+@using Blazor.Diagrams.Core.Models
+@using Blazor.Diagrams.Core.Geometry
+@using Blazor.Diagrams.Options
+@using Blazor.Diagrams.Core.Routers
+@using Blazor.Diagrams.Core.PathGenerators
+@using Blazor.Diagrams.Core.Anchors
+@using Blazor.Diagrams.Components
+@using bakalarka_bil0175
+
+@rendermode @(new Microsoft.AspNetCore.Components.Web.InteractiveWebAssemblyRenderMode(prerender: false))
+
+
+<div style="margin-bottom: 10px;">
+    <button class="btn btn-outline-primary" @onclick='() => addGate("START")'>START</button>
+    <button class="btn btn-outline-primary" @onclick='() => addGate("AND")'>∧ (AND)</button>
+    <button class="btn btn-outline-primary" @onclick='() => addGate("OR")'>∨ (OR)</button>
+
+    <button class="btn btn-outline-primary" @onclick='() => addGate("NEG_AND")'>¬ ∧ (NEG AND)</button>
+    <button class="btn btn-outline-primary" @onclick='() => addGate("NEG_OR")'>¬ ∨ (NEG OR)</button>
+
+    <button class="btn btn-outline-primary" @onclick='() => addGate("NEG")'>¬ (NEG)</button>
+    <button class="btn btn-primary" @onclick="Calculate">VYPOCITAT</button>
+</div>
+
+<div class="diagram-container" style="width: 100%; height: 600px; border: 1px solid black;">
+    @if (Diagram != null)
+    {
+        <CascadingValue Value="Diagram" IsFixed="true">
+            <DiagramCanvas></DiagramCanvas>
+        </CascadingValue>
+    }
+</div>
+
+@code {
+    public BlazorDiagram Diagram { get; set; } = null!;
+    private Circuit Evaluator = new();
+
+    protected override void OnInitialized()
+    {
+        var options = new BlazorDiagramOptions
+        {
+            AllowMultiSelection = true,
+            Zoom = { Enabled = false },
+            Links =
+            {
+                DefaultRouter = new NormalRouter(),
+                DefaultPathGenerator = new SmoothPathGenerator()
+            }
+        };
+
+        Diagram = new BlazorDiagram(options);
+
+        
+        Diagram.RegisterComponent<GateNode, GateWidget>();
+
+        
+        var uzel1 = new GateNode("START", new Point(50, 50));
+        uzel1.AddPort(PortAlignment.Right);
+        Diagram.Nodes.Add(uzel1);
+
+       
+        var uzel2 = new GateNode("AND", new Point(300, 100));
+        uzel2.AddPort(PortAlignment.Left);
+        uzel2.AddPort(PortAlignment.Right);
+        Diagram.Nodes.Add(uzel2);
+        
+        
+        Diagram.Links.Add(new LinkModel(uzel1.Ports[0], uzel2.Ports[0]));
+    }
+
+    private void addGate(string type)
+    {
+        var newGate = new GateNode(type, new Point(50, 50), false);
+
+        
+        if (type == "START") newGate.AddPort(PortAlignment.Right);
+        else if (type.Contains("AND") || type.Contains("OR"))
+        {
+            newGate.AddPort(PortAlignment.Left);
+            newGate.AddPort(PortAlignment.Left);
+            newGate.AddPort(PortAlignment.Right);
+        }
+        else { newGate.AddPort(PortAlignment.Left); newGate.AddPort(PortAlignment.Right); }
+
+        Diagram.Nodes.Add(newGate);
+    }
+    
+    private void Calculate()
+    {
+        
+        Evaluator.Evaluate(Diagram);
+        
+        foreach (var node in Diagram.Nodes)
+        {
+            node.Refresh();
+        }
+    }
+}

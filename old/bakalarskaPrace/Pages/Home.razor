@@ -1,0 +1,28 @@
+﻿@page "/"
+@using Blazor.Diagrams
+@using Blazor.Diagrams.Core.Models
+@using Blazor.Diagrams.Components
+@using Blazor.Diagrams.Core.Geometry
+
+@rendermode @(new InteractiveWebAssemblyRenderMode(prerender: false))
+
+<div class="canvas-wrapper" style="width: 100%; height: 600px; border: 1px solid #ccc;">
+    <CascadingValue Value="Diagram" IsFixed="true">
+        <DiagramCanvas />
+    </CascadingValue>
+</div>
+
+@code {
+    private BlazorDiagram Diagram { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        Diagram.RegisterComponent<AddTwoNumbersNode, HradloWidget>();
+
+        var node = Diagram.Nodes.Add(new AddTwoNumbersNode(new Point(80, 80)));
+        node.AddPort(PortAlignment.Top);
+        node.AddPort(PortAlignment.Bottom);
+    }
+}

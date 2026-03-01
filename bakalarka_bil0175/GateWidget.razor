@@ -9,18 +9,19 @@
          padding: 8px;
          min-width: 90px;
          text-align: center;
-         border: 2px solid @(Node.IsNegatedVersion ? "#dc3545" : "#007bff");
+         /* Tady je ten z-index: modrá (10) je nad červenou (1) */
+         z-index: @(Node.IsNegatedVersion ? "1" : "10");
+     border: 2px solid @(Node.IsNegatedVersion ? "#dc3545" : "#007bff");
      border-radius: @(Node.IsNegatedVersion ? "0px" : "12px");
      box-shadow: 0px @(Node.IsNegatedVersion ? "0px" : "4px") 2px rgba(0,0,0,0.1);">
 
-    @*SMAZAT*@
-    <button @onclick="Delete"
-            @onclick:stopPropagation="true"
-            style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border:1px solid #a71d2a; width: 20px; height: 20px; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 10; display: flex; align-items: center; justify-content: center;">
+    @* SMAZAT *@
+    <button @onclick="Delete" @onclick:stopPropagation="true"
+            style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border:1px solid #a71d2a; width: 20px; height: 20px; font-size: 12px; cursor: pointer; font-weight: bold; z-index: 100; display: flex; align-items: center; justify-content: center;">
         X
     </button>
 
-    @*Porty*@
+    @* Porty *@
     <div style="position: absolute; left: -10px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-around;">
         @foreach (var port in Node.Ports.Where(p => p.Alignment == PortAlignment.Left))
         {
@@ -29,7 +30,7 @@
             </PortRenderer>
         }
     </div>
-    
+
     <div style="position: absolute; right: -10px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-around;">
         @foreach (var port in Node.Ports.Where(p => p.Alignment == PortAlignment.Right))
         {
@@ -39,27 +40,25 @@
         }
     </div>
 
-    <strong style="font-size: 1.4em; color: @(Node.IsNegatedVersion ? "#dc3545" : "#007bff");">
+    @* Hradla *@
+    <strong style="font-size: 1.2em; color: @(Node.IsNegatedVersion ? "#dc3545" : "#007bff");">
         @Node.Label
     </strong>
 
-    @*Status*@
-    <div style="font-size: 0.9em; font-weight: bold; border-top: 1px solid #eee; width: 100%; padding-top: 2px;">
+    @* Status  *@
+    <div style="font-size: 1.5em; font-weight: bold; border-top: 1px solid #eee; width: 100%; margin-top: 5px; padding-top: 2px;">
         @(Node.Status == NodeState.True ? "1" : "0")
     </div>
 
-        @if (Node.GateType == "START" && !Node.IsNegatedVersion)
-        {
-            <button @onclick="changeValue"
-                    @onclick:stopPropagation="true"
-                    class="btn btn-sm btn-dark"
-                    style="width: 100%; margin-top: 10px; font-weight: bold; font-size: 0.75rem;">
-                Zmenit stav
-            </button>
-        }
-    
-
- 
+    @if (Node.GateType == "START" && !Node.IsNegatedVersion)
+    {
+        <button @onclick="changeValue"
+                @onclick:stopPropagation="true"
+                class="btn btn-sm btn-dark"
+                style="width: 100%; margin-top: 10px; font-weight: bold; font-size: 0.75rem;">
+            Zmenit stav
+        </button>
+    }
 </div>
 
 @code {
@@ -70,24 +69,10 @@
     {
         if (Node.GateType == "START")
         {
-            
-            if (Node.Label.Contains("(1)"))
-            {
-                Node.Label = "START (0)";
-            }
-            else
-            {
-                Node.Label = "START (1)";
-            }
-            
-           
+            Node.Status = (Node.Status == NodeState.True) ? NodeState.False : NodeState.True;
             Node.Refresh();
         }
     }
-    
-    private void Delete()
-    {
-        
-        Diagram.Nodes.Remove(Node);
-    }
+
+    private void Delete() => Diagram.Nodes.Remove(Node);
 }

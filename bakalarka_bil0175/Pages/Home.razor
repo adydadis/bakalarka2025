@@ -14,7 +14,7 @@
 
 
 <div style="margin-bottom: 10px;">
-    <button class="btn btn-outline-primary" @onclick='() => addGate("START")'>START</button>
+    <button class="btn btn-outline-primary" @onclick='() => AddStartNode()'>START</button>
     <button class="btn btn-outline-primary" @onclick='() => addGate("AND")'>∧ (AND)</button>
     <button class="btn btn-outline-primary" @onclick='() => addGate("OR")'>∨ (OR)</button>
 
@@ -57,6 +57,15 @@
     public BlazorDiagram Diagram { get; set; } = null!;
     private Circuit Evaluator = new();
 
+    private void AddStartNode()
+    {
+        var count = Diagram.Nodes.OfType<GateNode>()
+            .Count(n => n.GateType == "START" && !n.IsNegatedVersion);
+    
+        var newNode = new GateNode("START", new Point(100, 100), false, count + 1);
+        Diagram.Nodes.Add(newNode);
+    }
+    
     protected override void OnInitialized()
     {
         var options = new BlazorDiagramOptions
@@ -74,24 +83,37 @@
         Diagram.RegisterComponent<GateNode, GateWidget>();
 
         
-        var start1 = new GateNode("START", new Point(50, 50));
-        start1.Status = NodeState.False; // "START 0"
+        var start1 = new GateNode("START", new Point(50, 50), false, 1);
+        
         start1.AddPort(PortAlignment.Right);
         Diagram.Nodes.Add(start1);
 
-        var start2 = new GateNode("START", new Point(50, 250)); // o 200px níž
-        start2.Status = NodeState.False; // "START 0"
+        var start2 = new GateNode("START", new Point(50, 250), false, 2);
         start2.AddPort(PortAlignment.Right);
         Diagram.Nodes.Add(start2);
+        
+        
+        var start3 = new GateNode("START", new Point(50, 450), false, 3);
+        start3.AddPort(PortAlignment.Right);
+        Diagram.Nodes.Add(start3);
+
+        var and = new GateNode("AND", new Point(350, 350));
+        and.AddPort(PortAlignment.Left);  
+        and.AddPort(PortAlignment.Left);  
+        and.AddPort(PortAlignment.Right); 
+        Diagram.Nodes.Add(and);
 
         var negAnd = new GateNode("NEG_AND", new Point(350, 150));
-        negAnd.AddPort(PortAlignment.Left);  // Horní vstup
-        negAnd.AddPort(PortAlignment.Left);  // Dolní vstup
-        negAnd.AddPort(PortAlignment.Right); // Výstup
+        negAnd.AddPort(PortAlignment.Left);  
+        negAnd.AddPort(PortAlignment.Left);  
+        negAnd.AddPort(PortAlignment.Right); 
         Diagram.Nodes.Add(negAnd);
     
-        Diagram.Links.Add(new GateLink(start1.Ports[0], negAnd.Ports[0], false));
-        Diagram.Links.Add(new GateLink(start2.Ports[0], negAnd.Ports[1], false));
+        Diagram.Links.Add(new GateLink(start1.Ports[0], and.Ports[0], false));
+        Diagram.Links.Add(new GateLink(start2.Ports[0], and.Ports[1], false));
+        
+        Diagram.Links.Add(new GateLink(and.Ports[2], negAnd.Ports[0], false));
+        Diagram.Links.Add(new GateLink(start3.Ports[0], negAnd.Ports[1], false));
     }
 
     private void addGate(string type)
@@ -120,13 +142,23 @@
 
         StateHasChanged();
 
-        await Task.Delay(100);
+        await Task.Delay(150);
+
+        foreach (var node in Diagram.Nodes)
+        {
+            node.Refresh(); 
+            foreach (var port in node.Ports)
+            {
+                port.Refresh(); 
+            }
+        }
 
         foreach (var link in Diagram.Links)
         {
             link.Refresh(); 
         }
 
+        
         Diagram.Refresh();
     }
     

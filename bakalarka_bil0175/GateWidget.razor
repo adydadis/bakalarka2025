@@ -6,14 +6,46 @@
 <div class="gate-container"
      style="position: relative;
          background: white;
-         padding: 8px;
-         min-width: 90px;
+         padding: 5px;
+         min-width: 80px;
          text-align: center;
-         /* Tady je ten z-index: modrá (10) je nad červenou (1) */
          z-index: @(Node.IsNegatedVersion ? "1" : "10");
      border: 2px solid @(Node.IsNegatedVersion ? "#dc3545" : "#007bff");
-     border-radius: @(Node.IsNegatedVersion ? "0px" : "12px");
-     box-shadow: 0px @(Node.IsNegatedVersion ? "0px" : "4px") 2px rgba(0,0,0,0.1);">
+     border-radius: @(Node.IsNegatedVersion ? "0px" : "8px");">
+
+    @* Porty *@
+    <div style="position: absolute; top: -10px; left: 0; right: 0; display: flex; justify-content: center; gap: 10px;">
+        @foreach (var port in Node.Ports.Where(p => p.Alignment == PortAlignment.Top))
+        {
+            <PortRenderer Port="port">
+                <div style="width: 12px; height: 12px; background: #555; border-radius: 50%; border: 2px solid white; cursor: crosshair;"></div>
+            </PortRenderer>
+        }
+    </div>
+
+    @* Hradla *@
+    <div style="margin-top: 5px;">
+        <strong style="font-size: 1em; color: @(Node.IsNegatedVersion ? "#dc3545" : "#007bff");">
+            @Node.Label
+        </strong>
+    </div>
+
+    @* Status *@
+    <div style="font-size: 1.2em; font-weight: bold; border-top: 1px solid #eee;">
+        @(Node.Status == NodeState.True ? "1" : "0")
+    </div>
+
+    @* Porty *@
+    <div style="position: absolute; bottom: -10px; left: 0; right: 0; display: flex; justify-content: center; gap: 15px;">
+        @foreach (var port in Node.Ports.Where(p => p.Alignment == PortAlignment.Bottom))
+        {
+            <PortRenderer Port="port">
+                <div style="width: 12px; height: 12px; background: #555; border-radius: 50%; border: 2px solid white; cursor: crosshair;"></div>
+            </PortRenderer>
+        }
+    </div>
+
+
 
     @* SMAZAT *@
     <button @onclick="Delete" @onclick:stopPropagation="true"
@@ -21,34 +53,6 @@
         X
     </button>
 
-    @* Porty *@
-    <div style="position: absolute; left: -10px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-around;">
-        @foreach (var port in Node.Ports.Where(p => p.Alignment == PortAlignment.Left))
-        {
-            <PortRenderer Port="port">
-                <div style="width: 18px; height: 18px; background: #555; border-radius: 50%; border: 2px solid white; cursor: crosshair;"></div>
-            </PortRenderer>
-        }
-    </div>
-
-    <div style="position: absolute; right: -10px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-around;">
-        @foreach (var port in Node.Ports.Where(p => p.Alignment == PortAlignment.Right))
-        {
-            <PortRenderer Port="port">
-                <div style="width: 14px; height: 14px; background: #555; border-radius: 50%; border: 2px solid white; cursor: crosshair;"></div>
-            </PortRenderer>
-        }
-    </div>
-
-    @* Hradla *@
-    <strong style="font-size: 1.2em; color: @(Node.IsNegatedVersion ? "#dc3545" : "#007bff");">
-        @Node.Label
-    </strong>
-
-    @* Status  *@
-    <div style="font-size: 1.5em; font-weight: bold; border-top: 1px solid #eee; width: 100%; margin-top: 5px; padding-top: 2px;">
-        @(Node.Status == NodeState.True ? "1" : "0")
-    </div>
 
     @if (Node.GateType == "START" && !Node.IsNegatedVersion)
     {
@@ -59,8 +63,31 @@
             Zmenit stav
         </button>
     }
+
+    @if (!Node.IsNegatedVersion && Node.Partner != null && Node.GateType.Contains("NEG"))
+    {
+        <div style="position: absolute; 
+                left: 80px;           
+                width: 80px;          
+                top: 50%; 
+                transform: translateY(-50%); 
+                display: flex; 
+                flex-direction: column; 
+                align-items: center; 
+                justify-content: center;
+                pointer-events: none;
+                z-index: 5;">
+        
+            <span style="font-size: 8px; color: #dc3545; font-weight: bold; margin-bottom: -2px; letter-spacing: 1px;">
+                DE MORGAN
+            </span>
+            <span style="font-size: 20px; color: #adb5bd; line-height: 1;">➔</span>
+        </div>
+    }
+    
 </div>
 
+    
 @code {
     [Parameter] public GateNode Node { get; set; } = null!;
     [CascadingParameter] public BlazorDiagram Diagram { get; set; } = null!;

@@ -1,7 +1,9 @@
 ﻿using Blazor.Diagrams.Core.Geometry;
 using Blazor.Diagrams.Core.Models;
+using Blazor.Diagrams.Core.Models.Base; 
 
 namespace bakalarka_bil0175;
+
 public class GateNode : NodeModel
 {
     public string GateType { get; set; } 
@@ -11,31 +13,43 @@ public class GateNode : NodeModel
     public GateNode? Partner { get; set; }
     
     public bool StartValue { get; set; } = false; 
+    public int? StartIndex { get; set; }
 
-    public GateNode(string gateType, Point position, bool isNegated = false) : base(position)
+    public GateNode(string gateType, Point position, bool isNegated = false, int? startIndex = null) : base(position)
     {
         GateType = gateType.ToUpper();
         IsNegatedVersion = isNegated;
-        string sAnd = "∧"; string sOr = "∨"; string sNeg = "¬";
+        StartIndex = startIndex;
 
-        if (GateType == "START") Label = isNegated ? "¬ START" : "START";
-        else if (GateType == "NEG_AND") {
-            Label = isNegated ? sOr : $"{sNeg} {sAnd}"; 
+        if (GateType == "START")
+        {
+            string suffix = StartIndex.HasValue ? StartIndex.Value.ToString() : "";
+            Label = isNegated ? $"¬S{suffix}" : $"S{suffix}";
+            this.Size = new Size(60, 40);
+            this.AddPort(PortAlignment.Top);
         }
-        else if (GateType == "NEG_OR") Label = isNegated ? sAnd : $"{sNeg} {sOr}";
-        else if (GateType == "AND") Label = isNegated ? sOr : sAnd;
-        else if (GateType == "OR") Label = isNegated ? sAnd : sOr;
-        else Label = sNeg;
+        else
+        {
+            this.Size = new Size(80, 60);
+            this.AddPort(PortAlignment.Bottom);
+            this.AddPort(PortAlignment.Bottom);
+            this.AddPort(PortAlignment.Top);
+
+            string sAnd = "∧"; string sOr = "∨"; string sNeg = "¬";
+        
+            if (GateType == "NEG_AND") Label = $"{sNeg} {sAnd}";
+            else if (GateType == "NEG_OR") Label = $"{sNeg} {sOr}";
+            else if (GateType == "AND") Label = sAnd;
+            else if (GateType == "OR") Label = sOr;
+            else Label = sNeg;
+        }
 
         this.Changed += (m) => {
             if (!this.IsNegatedVersion && this.Partner != null) {
-                this.Partner.Position = new Point(this.Position.X, this.Position.Y + 120);
+                int offset = this.GateType.Contains("NEG") ? 160 : 120;
+                this.Partner.SetPosition(this.Position.X + offset, this.Position.Y);
                 this.Partner.Refresh();
-        
-                foreach (var port in this.Partner.Ports) port.Refresh();
-                foreach (var link in this.Partner.Links) link.Refresh();
             }
-            foreach (var link in this.Links) link.Refresh();
         };
     }
 }

@@ -6,5 +6,7 @@ Jak se pouziva?
 3. U hradla START lze zmenit hodnotu (0 nebo 1)
 4. Kliknete na tlacitko "VYPOCITAT"
 
+Aplikace ted ma i bezkontextovou gramatiku.
+
 Aplikace je nahrana a bezi na mem skolnim webu:
 https://homel.vsb.cz/~bil0175/

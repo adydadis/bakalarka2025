@@ -7,33 +7,35 @@ namespace bakalarka_bil0175;
 public class GateNode : NodeModel
 {
     public string GateType { get; set; } 
-    public string Label { get; set; }
+    public string Label { get; set; } = "";
     public NodeState Status { get; set; } = NodeState.NotVisited;
     public bool IsNegatedVersion { get; set; } = false;
     public GateNode? Partner { get; set; }
     
     public bool StartValue { get; set; } = false; 
-    public int? StartIndex { get; set; }
+    
+    public string OriginalLabel { get; set; }
 
-    public GateNode(string gateType, Point position, bool isNegated = false, int? startIndex = null) : base(position)
+    public GateNode(string gateType, Point position, bool isNegated = false, string label = "") : base(position)
     {
         GateType = gateType.ToUpper();
         IsNegatedVersion = isNegated;
-        StartIndex = startIndex;
+        OriginalLabel = label;
 
         if (GateType == "START")
         {
-            string suffix = StartIndex.HasValue ? StartIndex.Value.ToString() : "";
-            Label = isNegated ? $"¬S{suffix}" : $"S{suffix}";
+            string displayLabel = int.TryParse(label, out _) ? $"S{label}" : label;
+            
+            Label = isNegated ? $"¬{displayLabel}" : displayLabel;
             this.Size = new Size(60, 40);
             this.AddPort(PortAlignment.Top);
         }
         else
         {
             this.Size = new Size(80, 60);
-            this.AddPort(PortAlignment.Bottom);
-            this.AddPort(PortAlignment.Bottom);
-            this.AddPort(PortAlignment.Top);
+            this.AddPort(PortAlignment.Bottom); 
+            this.AddPort(PortAlignment.Bottom); 
+            this.AddPort(PortAlignment.Top);    
 
             string sAnd = "∧"; string sOr = "∨"; string sNeg = "¬";
         

@@ -1,0 +1,157 @@
+﻿@page "/circuit"  
+@using Blazor.Diagrams
+@using Blazor.Diagrams.Core.Models
+@using Blazor.Diagrams.Core.Geometry
+@using Blazor.Diagrams.Options
+@using Blazor.Diagrams.Core.Routers
+@using Blazor.Diagrams.Core.PathGenerators
+@using Blazor.Diagrams.Core.Anchors
+@using Blazor.Diagrams.Components
+@using bakalarka_bil0175
+
+@rendermode @(new Microsoft.AspNetCore.Components.Web.InteractiveWebAssemblyRenderMode(prerender: false))
+
+<div style="display: grid; grid-template-columns: 350px 1fr; gap: 20px; padding: 20px; height: 90vh; box-sizing: border-box;">
+
+    @* vlevo *@
+    <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+
+        <div style="background: #007bff; color: white; padding: 15px; font-weight: bold; font-size: 1.1rem;">
+            <i class="bi bi-cpu-fill"></i> Komponenty obvodu
+        </div>
+
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1;">
+
+            <p class="text-muted small">Kliknutím přidáte prvek na plochu:</p>
+
+            <button class="btn btn-primary fw-bold mb-2" @onclick='() => AddStartNode()'>
+                <i class="bi bi-plus-circle"></i> Přidat Vstup (START)
+            </button>
+
+            <hr />
+
+            @* Logická hradla *@
+            <button class="btn btn-outline-secondary text-start" @onclick='() => addGate("AND")'>∧ (AND)</button>
+            <button class="btn btn-outline-secondary text-start" @onclick='() => addGate("OR")'>∨ (OR)</button>
+            <button class="btn btn-outline-secondary text-start" @onclick='() => addGate("NEG_AND")'>¬ ∧ (NAND)</button>
+            <button class="btn btn-outline-secondary text-start" @onclick='() => addGate("NEG_OR")'>¬ ∨ (NOR)</button>
+            <button class="btn btn-outline-secondary text-start" @onclick='() => addGate("NEG")'>¬ (NOT)</button>
+
+            <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+                <button @onclick="Calculate"
+                        style="background: #356ddc; color: white; border: none; padding: 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                    <i class="bi bi-play-fill"></i> VYPOCITAT
+                </button>
+
+                <button @onclick="ClearAll"
+                        style="background: #dc3545; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer; opacity: 0.8;">
+                    <i class="bi bi-trash"></i> VYMAZAT VŠE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @* vpravo *@
+    <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #dee2e6; border-radius: 6px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+
+        <div style="background: #343a40; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: bold;">Plocha </span>
+            <button class="btn btn-sm btn-outline-light" @onclick="() => Diagram.ZoomToFit(50)">Vycentrovat</button>
+        </div>
+
+        <div style="flex-grow: 1; position: relative; background: #f8f9fa;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
+                <CascadingValue Value="Diagram" IsFixed="true">
+                    <DiagramCanvas></DiagramCanvas>
+                </CascadingValue>
+            </div>
+        </div>
+    </div>
+
+</div>
+@code {
+    public BlazorDiagram Diagram { get; set; } = null!;
+    private Circuit Evaluator = new();
+
+    private void AddStartNode()
+    {
+        var count = Diagram.Nodes.OfType<GateNode>()
+            .Count(n => n.GateType == "START" && !n.IsNegatedVersion);
+    
+        var newNode = new GateNode("START", new Point(100, 100), false, (count + 1).ToString());
+        Diagram.Nodes.Add(newNode);
+    }
+    
+    protected override void OnInitialized()
+    {
+        var options = new BlazorDiagramOptions
+        {
+            AllowMultiSelection = true,
+            Zoom = { Enabled = false },
+            Links =
+            {
+                DefaultRouter = new NormalRouter(),
+                DefaultPathGenerator = new SmoothPathGenerator()
+            }
+        };
+
+        Diagram = new BlazorDiagram(options);
+        Diagram.RegisterComponent<GateNode, GateWidget>();
+        
+        var start1 = new GateNode("START", new Point(50, 50), false, "1");
+        Diagram.Nodes.Add(start1);
+
+        var start2 = new GateNode("START", new Point(50, 250), false, "2");
+        Diagram.Nodes.Add(start2);
+        
+        var start3 = new GateNode("START", new Point(50, 450), false, "3");
+        Diagram.Nodes.Add(start3);
+
+        var and = new GateNode("AND", new Point(350, 350));
+        Diagram.Nodes.Add(and);
+
+        var negAnd = new GateNode("NEG_AND", new Point(350, 150));
+        Diagram.Nodes.Add(negAnd);
+    
+        Diagram.Links.Add(new GateLink(start1.Ports[0], and.Ports[0], false));
+        Diagram.Links.Add(new GateLink(start2.Ports[0], and.Ports[1], false));
+        Diagram.Links.Add(new GateLink(and.Ports[2], negAnd.Ports[0], false));
+        Diagram.Links.Add(new GateLink(start3.Ports[0], negAnd.Ports[1], false));
+    }
+
+    private void addGate(string type)
+    {
+        string label = "";
+        if (type == "START") 
+        {
+            var count = Diagram.Nodes.OfType<GateNode>().Count(n => n.GateType == "START" && !n.IsNegatedVersion);
+            label = (count + 1).ToString();
+        }
+
+        var newGate = new GateNode(type, new Point(50, 50), false, label);
+        Diagram.Nodes.Add(newGate);
+    }
+    
+    private async Task Calculate()
+    {
+        Diagram.Batch(() => { Evaluator.Evaluate(Diagram); });
+        StateHasChanged();
+        await Task.Delay(150);
+        foreach (var node in Diagram.Nodes) {
+            node.Refresh(); 
+            foreach (var port in node.Ports) port.Refresh(); 
+        }
+        foreach (var link in Diagram.Links) link.Refresh(); 
+        Diagram.Refresh();
+    }
+    
+    private void ClearAll()
+    {
+        Diagram.Batch(() => {
+            Diagram.Nodes.Clear();
+            Diagram.Links.Clear();
+        });
+        Diagram.Refresh();
+        StateHasChanged();
+    }
+}

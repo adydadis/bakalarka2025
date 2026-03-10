@@ -1,0 +1,118 @@
+﻿@page "/grammar"
+@using Blazor.Diagrams
+@using Blazor.Diagrams.Core
+@using Blazor.Diagrams.Core.Models
+@using Blazor.Diagrams.Components
+@using Blazor.Diagrams.Options
+@using bakalarka_bil0175
+
+
+<div style="display: grid; grid-template-columns: 400px 1fr; gap: 20px; padding: 20px; height: 90vh; box-sizing: border-box;">
+
+    @* zadavani *@
+    <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+        
+        <div style="background: #004d40; color: white; padding: 15px; font-weight: bold; font-size: 1.1rem;">
+            <i class="bi bi-diagram-3-fill me-2"></i> Bezkontextová gramatika
+        </div>
+
+        <div style="padding: 20px; display: flex; flex-direction: column; flex-grow: 1;">
+            <p style="color: #6c757d; font-size: 0.85rem; margin-bottom: 15px;">
+                Zadej pravidla (jedno na řádek).<br />
+                <b>Velká</b> = hradla, <b>malá</b> = vstupy.<br />
+            </p>
+
+            <textarea @bind="grammarInput"
+                      style="flex-grow: 1; width: 100%; font-family: 'Consolas', monospace; font-size: 14px; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; resize: none; margin-bottom: 20px; background-color: #fcfcfc;"
+                      placeholder="S -> AB | C&#10;A -> ab&#10;B -> c"></textarea>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                
+                <button @onclick="GenerovatObvod"
+                        style="background: #00897b; color: white; border: none; padding: 15px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
+                    <i class="bi bi-play-circle-fill me-2"></i> GENEROVAT SCHÉMA
+                </button>
+
+                <div style="display: flex; gap: 8px;">
+                    <button @onclick="Priklad1" style="flex: 1; padding: 8px; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 4px;">Příklad 1</button>
+                    <button @onclick="Priklad2" style="flex: 1; padding: 8px; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 4px;">Příklad 2</button>
+                    <button @onclick="Vymazat" style="flex: 1; padding: 8px; border: 1px solid #ffcccc; color: #cc0000; background: white; cursor: pointer; border-radius: 4px;">Smazat</button>
+                </div>
+            </div>
+
+                
+            <div style="margin-top: 20px; padding: 10px; background: #e0f2f1; border-radius: 4px; font-size: 0.8rem; color: #004d40;">
+                <strong>Operátory:</strong><br />
+                <code>ABC</code> (AND)<br />
+                <code>|</code> (OR)
+            </div>
+        </div>
+    </div>
+
+    @* plocha *@
+    <div style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+        <div style="background: #343a40; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: bold;">Plocha</span>
+            <button @onclick="() => Diagram.ZoomToFit(50)"
+                    style="background: transparent; border: 1px solid #6c757d; color: white; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                Vycentrovat
+            </button>
+        </div>
+
+        <div style="flex-grow: 1; position: relative; background: #f8f9fa;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
+                <CascadingValue Value="Diagram">
+                    <DiagramCanvas></DiagramCanvas>
+                </CascadingValue>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    private string grammarInput = "S -> AaB | Cc";
+    private BlazorDiagram Diagram { get; set; } = default!;
+    private Circuit circuit = new Circuit();
+
+    protected override void OnInitialized()
+    {
+        var options = new BlazorDiagramOptions
+        {
+            Zoom = { Enabled = true, ScaleFactor = 1.05 }
+        };
+
+        Diagram = new BlazorDiagram(options);
+        Diagram.RegisterComponent<GateNode, GateWidget>();
+    }
+
+    private void GenerovatObvod()
+    {
+        Diagram.Nodes.Clear();
+        Diagram.Links.Clear();
+
+        try
+        {
+            GrammarParser.Parse(grammarInput, Diagram);
+            circuit.SimpleLayout(Diagram);
+            Diagram.Refresh(); 
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("CHYBA: " + ex.Message);
+        }
+
+        StateHasChanged();
+    }
+    
+    private void Priklad1() => grammarInput = "S -> AB | C\nA -> ab\nB -> cd";
+    private void Priklad2() => grammarInput = "S -> AaB | Cc\nA -> xy\nC -> zw";
+
+    private void Vymazat()
+    {
+        grammarInput = "";
+        Diagram.Nodes.Clear();
+        Diagram.Links.Clear();
+        Diagram.Refresh();
+    }
+}

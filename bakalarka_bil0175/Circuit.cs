@@ -10,9 +10,7 @@ public class Circuit
     {
         var blueNodes = diagram.Nodes.OfType<GateNode>().Where(n => !n.IsNegatedVersion).ToList();
         foreach (var n in blueNodes) {
-            if (n.GateType == "START" || n.GateType.Contains("NEG")) {
-                GetOrCreatePartner(n, diagram);
-            }
+            GetOrCreatePartner(n, diagram);
         }
 
         var allNodesSorted = diagram.Nodes.OfType<GateNode>()
@@ -36,7 +34,8 @@ public class Circuit
             "AND" => "OR",
             "OR" => "AND",
             "NEG_AND" => "OR",  
-            "NEG_OR" => "AND",   
+            "NEG_OR" => "AND",
+            "NEG" => "NEG", 
             _ => type 
         };
     }
@@ -48,10 +47,14 @@ public class Circuit
         string partnerType = GetDualType(node.GateType);
         int offset = node.GateType.Contains("NEG") ? 160 : 120;
         
-        var partner = new GateNode(partnerType, new Point(node.Position.X + offset, node.Position.Y), true, node.StartIndex);
+        var partner = new GateNode(partnerType, 
+                                   new Point(node.Position.X + offset, node.Position.Y), 
+                                   true, 
+                                   node.OriginalLabel);
+
         node.Partner = partner;
         partner.Partner = node;
-        diagram.Nodes.Add(partner);
+        diagram.Batch(() => diagram.Nodes.Add(partner));
         
         var incomingLinks = diagram.Links.Where(l => {
             var target = (l.Target.Model is PortModel tp) ? tp.Parent : l.Target.Model as NodeModel;
@@ -66,8 +69,11 @@ public class Circuit
                     var pFrom = sourcePartner.Ports.FirstOrDefault(p => p.Alignment == PortAlignment.Top);
                     
                     var modryTargetPort = link.Target.Model as PortModel;
-                    int index = node.Ports.Where(p => p.Alignment == PortAlignment.Bottom).ToList().IndexOf(modryTargetPort);
-                    var pTo = partner.Ports.Where(p => p.Alignment == PortAlignment.Bottom).ElementAtOrDefault(index);
+                    int index = node.Ports.Where(p => p.Alignment == PortAlignment.Bottom)
+                                          .ToList().IndexOf(modryTargetPort);
+                    
+                    var pTo = partner.Ports.Where(p => p.Alignment == PortAlignment.Bottom)
+                                           .ElementAtOrDefault(index);
 
                     if (pFrom != null && pTo != null) {
                         if (!diagram.Links.Any(l => l.Source.Model == pFrom && l.Target.Model == pTo)) {
@@ -93,18 +99,32 @@ public class Circuit
 
         switch (node.GateType) {
             case "AND":
-                result = inputNodes.Count > 0 && inputNodes.All(i => i.Status == NodeState.True);
+                if (!node.IsNegatedVersion)
+                    result = inputNodes.Count > 0 && inputNodes.All(i => i.Status == NodeState.True);
+                else
+                    result = inputNodes.Any(i => i.Status == NodeState.True);
                 break;
             case "OR":
-                result = inputNodes.Any(i => i.Status == NodeState.True);
+                if (!node.IsNegatedVersion)
+                    result = inputNodes.Any(i => i.Status == NodeState.True);
+                else
+                    result = inputNodes.Count > 0 && inputNodes.All(i => i.Status == NodeState.True);
                 break;
             case "NEG_AND": 
-                if (!node.IsNegatedVersion) result = !(inputNodes.Count > 0 && inputNodes.All(i => i.Status == NodeState.True));
-                else result = inputNodes.Any(i => i.Status == NodeState.True); 
+                if (!node.IsNegatedVersion) 
+                    result = !(inputNodes.Count > 0 && inputNodes.All(i => i.Status == NodeState.True));
+                else 
+                    result = inputNodes.Any(i => i.Status == NodeState.True); 
                 break;
             case "NEG_OR": 
-                if (!node.IsNegatedVersion) result = !inputNodes.Any(i => i.Status == NodeState.True);
-                else result = inputNodes.Count > 0 && inputNodes.All(i => i.Status == NodeState.True); 
+                if (!node.IsNegatedVersion) 
+                    result = !inputNodes.Any(i => i.Status == NodeState.True);
+                else 
+                    result = inputNodes.Count > 0 && inputNodes.All(i => i.Status == NodeState.True); 
+                break;
+            case "NEG": 
+                if (inputNodes.Count > 0)
+                    result = (inputNodes[0].Status == NodeState.False);
                 break;
         }
         node.Status = result ? NodeState.True : NodeState.False;
@@ -161,9 +181,33 @@ public class Circuit
             }
         }
         
-        var allLinks = diagram.Links.ToList();
-        diagram.Links.Clear(); 
-        foreach (var link in allLinks) diagram.Links.Add(link);
         foreach (var node in diagram.Nodes) node.Refresh();
+    }
+    
+    public void SimpleLayout(Diagram diagram)
+    {
+        var nodes = diagram.Nodes.OfType<GateNode>().ToList();
+        if (!nodes.Any()) return;
+
+        var layers = new Dictionary<GateNode, int>();
+        foreach (var n in nodes) layers[n] = GetNodeLevel(n, diagram);
+
+        int maxLevel = layers.Values.Max(); 
+        int rowSpacing = 140; 
+        int colSpacing = 180; 
+
+        var groups = layers.GroupBy(kv => kv.Value).OrderBy(g => g.Key);
+        foreach (var group in groups) {
+            int level = group.Key;
+            var nodesInLevel = group.ToList();
+            double startX = -((nodesInLevel.Count - 1) * colSpacing) / 2.0;
+        
+            int y = (maxLevel - level) * rowSpacing + 80;
+
+            for (int i = 0; i < nodesInLevel.Count; i++) {
+                var node = nodesInLevel[i].Key;
+                node.SetPosition(startX + (i * colSpacing) + 450, y);
+            }
+        }
     }
 }

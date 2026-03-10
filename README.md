@@ -1,4 +1,4 @@
-﻿Aplikace zatim umi pridavat na plochu hradla pomoci tlacitek a propojovat je draty.
+﻿Aplikace pridavat na plochu hradla pomoci tlacitek, propojovat je draty a spravne vypocitat.
 
 Jak se pouziva?
 1. Vyberte si hradlo z horniho menu
